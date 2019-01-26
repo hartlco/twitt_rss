@@ -89,7 +89,7 @@ fn create_feed(tweets: egg_mode::Response<std::vec::Vec<Tweet>>) -> String {
     return string;
 }
 
-fn content_for(tweet: &egg_mode::Response<Tweet>) -> String {
+fn content_for(tweet: &Tweet) -> String {
     let mut content = format!("<p>{}</p>", replaced_content_for(tweet)).to_string();
 
     if let Some(quote) = &tweet.quoted_status {
@@ -104,15 +104,11 @@ fn content_for(tweet: &egg_mode::Response<Tweet>) -> String {
 }
 
 fn username_for(tweet: &Tweet) -> String {
-    let user = &tweet.user;
-    let username: String;
-    if let Some(user) = user {
-        username = user.name.to_string();
+    if let Some(user) = &tweet.user {
+        return user.name.to_string();
     } else {
-        username = "No username".to_string();
+        return "No username".to_string();
     }
-
-    return username;
 }
 
 fn replaced_content_for(tweet: &Tweet) -> String {
