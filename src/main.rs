@@ -9,6 +9,7 @@ use tokio_core::reactor::Core;
 use rss::ChannelBuilder;
 use rss::ItemBuilder;
 use egg_mode::tweet::Tweet;
+use std::env;
 
 fn main() {
     let port = config_value("port");
@@ -130,8 +131,11 @@ fn replaced_content_for(tweet: &Tweet) -> String {
 }
 
 fn config_value(key: &str) -> String {
+    let args: Vec<String> = env::args().collect();
+    let config_name = &args[1];
+
     let mut settings = config::Config::default();
-    settings.merge(config::File::with_name("Config")).unwrap();
+    settings.merge(config::File::with_name(config_name)).unwrap();
     match settings.get_str(key) {
         Ok(value) => {
             return value
