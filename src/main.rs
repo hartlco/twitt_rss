@@ -36,15 +36,14 @@ fn feed() -> String {
     };
 
     let mut core = Core::new().unwrap();
-    let handle = core.handle();
 
-    let rustlang = core.run(egg_mode::user::show(&config_value("username"), &token, &handle)).unwrap();
-    let lists = core.run(egg_mode::list::list(rustlang.id, true, &token, &handle)).unwrap();
+    let rustlang = core.run(egg_mode::user::show(&config_value("username"), &token)).unwrap();
+    let lists = core.run(egg_mode::list::list(rustlang.id, true, &token)).unwrap();
 
     for list in lists {
         if list.name == config_value("listname") {
             let listid = egg_mode::list::ListID::from_id(list.id);
-            let timeline = egg_mode::list::statuses(listid, true, &token, &handle).with_page_size(100);
+            let timeline = egg_mode::list::statuses(listid, true, &token).with_page_size(100);
             let tweets = core.run(timeline.start()).unwrap();
             return create_feed(tweets.1);
         }
@@ -116,7 +115,7 @@ fn replaced_content_for(tweet: &Tweet) -> String {
     let mut content = tweet.text.to_string();
 
     for url in &tweet.entities.urls {
-        let html_url = format!("<a href=\"{}\">{}</a>", url.expanded_url, url.display_url);
+        let html_url = format!("<a href=\"{}\">{}</a>", url.url, url.display_url);
         content = content.replace(&url.url, &html_url);
     }
 
