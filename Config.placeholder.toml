@@ -1,4 +1,4 @@
-port = "9968"
+port = "6060"
 
 # Values from Twitter App
 consumer_key = "XXX"
