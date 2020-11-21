@@ -76,7 +76,7 @@ fn create_feed(tweets: egg_mode::Response<std::vec::Vec<Tweet>>) -> String {
         .description(content_for(&tweet))
         .title(username.to_string())
         .pub_date(pub_date)
-        .link(format!("https://twitter.com/{}/statuses/{}", username, tweet.id.to_string()))
+        .link(format!("https://twitter.com/{}/status/{}", tweet.user.unwrap().screen_name, tweet.id.to_string()))
         .guid(guid)
         .build()
         .unwrap();
