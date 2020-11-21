@@ -1,26 +1,32 @@
 extern crate egg_mode;
-extern crate tokio_core;
 extern crate rss;
-extern crate rouille;
 extern crate config;
 
-use rouille::Response;
-use tokio_core::reactor::Core;
 use rss::ChannelBuilder;
 use rss::ItemBuilder;
 use egg_mode::tweet::Tweet;
 use std::env;
 
-fn main() {
+use actix_web::{get, App, HttpResponse, HttpServer};
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
     let port = config_value("port");
-    println!("Starting server on port {}", port);
-    rouille::start_server(format!("0.0.0.0:{}", port), move |_request| {
-        println!("{}", "Getting request");
-        return Response::from_data("application/rss+xml", feed());
-    });
+
+    let url = format!("0.0.0.0:{}", port);
+    println!("Running on: http://{}", url);
+
+    HttpServer::new(|| {
+        App::new()
+            .service(feed)
+    })
+    .bind(url)?
+    .run()
+    .await
 }
 
-fn feed() -> String {
+#[get("/")]
+async fn feed() -> HttpResponse {
     let consumer_key = config_value("consumer_key");
     let consumer_secret = config_value("consumer_secret");
 
@@ -35,27 +41,29 @@ fn feed() -> String {
         access: access_token,
     };
 
-    let mut core = Core::new().unwrap();
+    let user_id = config_value("username").to_string();
+    let rustlang = egg_mode::user::show(user_id, &token).await.unwrap();
+    let lists = egg_mode::list::list(rustlang.id, true, &token).await.unwrap();
 
-    let rustlang = core.run(egg_mode::user::show(&config_value("username"), &token)).unwrap();
-    let lists = core.run(egg_mode::list::list(rustlang.id, true, &token)).unwrap();
-
-    for list in lists {
+    for list in lists.response {
         if list.name == config_value("listname") {
             let listid = egg_mode::list::ListID::from_id(list.id);
             let timeline = egg_mode::list::statuses(listid, true, &token).with_page_size(100);
-            let tweets = core.run(timeline.start()).unwrap();
-            return create_feed(tweets.1);
+            let tweets = timeline.start().await.unwrap();
+                return HttpResponse::Ok()
+                    .content_type("application/rss+xml")
+                    .body(create_feed(tweets.1));
         }
     }
 
-    return "".to_string();
+    HttpResponse::Ok()
+        .body("")
 }
 
 fn create_feed(tweets: egg_mode::Response<std::vec::Vec<Tweet>>) -> String {
     let mut tweet_items = Vec::new();
 
-    for tweet in tweets {
+    for tweet in tweets.response {
         let mut guid = rss::Guid::default();
         guid.set_value(tweet.id.to_string());
         guid.set_permalink(false);
